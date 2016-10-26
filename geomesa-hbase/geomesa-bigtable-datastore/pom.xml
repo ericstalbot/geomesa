@@ -36,11 +36,11 @@
             <artifactId>bigtable-hbase-1.2</artifactId>
             <version>${bigtable.version}</version>
         </dependency>
-        <!--<dependency>
+        <dependency>
             <groupId>com.google.cloud.bigtable</groupId>
             <artifactId>bigtable-hbase-mapreduce</artifactId>
             <version>${bigtable.version}</version>
-        </dependency>-->
+        </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative-boringssl-static</artifactId>
@@ -52,6 +52,7 @@
             <groupId>org.specs2</groupId>
             <artifactId>specs2_${scala.binary.version}</artifactId>
         </dependency>
+
 
     </dependencies>
 
