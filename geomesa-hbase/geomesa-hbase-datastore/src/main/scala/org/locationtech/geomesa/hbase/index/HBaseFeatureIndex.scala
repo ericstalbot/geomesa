@@ -48,9 +48,6 @@ trait HBaseFeatureIndex extends HBaseFeatureIndexType
 
   import HBaseFeatureIndex.{DataColumnFamily, DataColumnQualifier}
 
-  def getTable(sft: SimpleFeatureType, ds: HBaseDataStore): Table =
-    ds.connection.getTable(TableName.valueOf(getTableName(sft.getTypeName, ds)))
-
   /**
     * Retrieve an ID from a row. All indices are assumed to encode the feature ID into the row key
     *
@@ -103,15 +100,19 @@ trait HBaseFeatureIndex extends HBaseFeatureIndexType
     import scala.collection.JavaConversions._
 
     if (shared) {
-      val table = getTable(sft, ds)
-      val scan = table.getScanner(new Scan().setRowPrefixFilter(sft.getTableSharingBytes).setFilter(new KeyOnlyFilter))
+      val table = ds.connection.getTable(TableName.valueOf(getTableName(sft.getTypeName, ds)))
       try {
-        scan.iterator.grouped(10000).foreach { result =>
-          val deletes = result.map(r => new Delete(r.getRow))
-          table.delete(deletes)
+        val scan = table.getScanner(new Scan().setRowPrefixFilter(sft.getTableSharingBytes).setFilter(new KeyOnlyFilter))
+        try {
+          scan.iterator.grouped(10000).foreach { result =>
+            val deletes = result.map(r => new Delete(r.getRow))
+            table.delete(deletes)
+          }
+        } finally {
+          scan.close()
         }
       } finally {
-        scan.close()
+        table.close()
       }
     } else {
       val table = TableName.valueOf(getTableName(sft.getTypeName, ds))
@@ -139,7 +140,7 @@ trait HBaseFeatureIndex extends HBaseFeatureIndexType
     import org.locationtech.geomesa.index.conf.QueryHints.RichHints
 
     if (ranges.isEmpty) { EmptyPlan(filter) } else {
-      val table = getTable(sft, ds)
+      val table = TableName.valueOf(getTableName(sft.getTypeName, ds))
       val eToF = entriesToFeatures(sft, hints.getReturnSft)
       if (ranges.head.isInstanceOf[Get]) {
         GetPlan(filter, table, ranges.asInstanceOf[Seq[Get]], eToF, filter.filter)

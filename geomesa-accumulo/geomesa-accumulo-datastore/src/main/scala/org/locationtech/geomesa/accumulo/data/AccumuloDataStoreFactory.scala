@@ -195,7 +195,7 @@ object AccumuloDataStoreParams {
   val visibilityParam        = new Param("visibilities", classOf[String], "Default Accumulo visibilities to apply to all written data", false)
   val tableNameParam         = new Param("tableName", classOf[String], "Accumulo catalog table name", true)
   val queryTimeoutParam      = GeoMesaDataStoreFactory.QueryTimeoutParam
-  val queryThreadsParam      = new Param("queryThreads", classOf[Integer], "The number of threads to use per query", false, 8)
+  val queryThreadsParam      = GeoMesaDataStoreFactory.QueryThreadsParam
   val recordThreadsParam     = new Param("recordThreads", classOf[Integer], "The number of threads to use for record retrieval", false, 10)
   val writeThreadsParam      = new Param("writeThreads", classOf[Integer], "The number of threads to use for writing records", false, 10)
   val looseBBoxParam         = GeoMesaDataStoreFactory.LooseBBoxParam

@@ -17,6 +17,7 @@ import org.locationtech.geomesa.utils.audit.AuditWriter
 
 object GeoMesaDataStoreFactory {
 
+  val QueryThreadsParam  = new Param("queryThreads", classOf[Integer], "The number of threads to use per query", false, 8)
   val LooseBBoxParam     = new Param("looseBoundingBox", classOf[java.lang.Boolean], "Use loose bounding boxes - queries will be faster but may return extraneous results", false, true)
   val GenerateStatsParam = new Param("generateStats", classOf[java.lang.Boolean], "Generate data statistics for improved query planning", false, true)
   val AuditQueriesParam  = new Param("auditQueries", classOf[java.lang.Boolean], "Audit queries being run", false, true)
@@ -40,6 +41,7 @@ object GeoMesaDataStoreFactory {
     def catalog: String
     def audit: Option[(AuditWriter, AuditProvider, String)]
     def generateStats: Boolean
+    def queryThreads: Int
     def queryTimeout: Option[Long]
     def looseBBox: Boolean
     def caching: Boolean

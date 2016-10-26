@@ -43,10 +43,11 @@ class HBaseDataStoreFactory extends DataStoreFactorySpi {
     } else {
       None
     }
+    val queryThreads = QueryThreadsParam.lookupWithDefault[Int](params)
     val queryTimeout = GeoMesaDataStoreFactory.queryTimeout(params)
     val looseBBox = LooseBBoxParam.lookupWithDefault[Boolean](params)
     val caching = CachingParam.lookupWithDefault[Boolean](params)
-    val config = HBaseDataStoreConfig(catalog, generateStats, audit, queryTimeout, looseBBox, caching)
+    val config = HBaseDataStoreConfig(catalog, generateStats, audit, queryThreads, queryTimeout, looseBBox, caching)
 
     new HBaseDataStore(connection, config)
   }
@@ -56,7 +57,8 @@ class HBaseDataStoreFactory extends DataStoreFactorySpi {
   override def getDescription: String = HBaseDataStoreFactory.Description
 
   override def getParametersInfo: Array[Param] =
-    Array(BigTableNameParam, QueryTimeoutParam, GenerateStatsParam, AuditQueriesParam, LooseBBoxParam, CachingParam)
+    Array(BigTableNameParam, QueryThreadsParam, QueryTimeoutParam, GenerateStatsParam,
+      AuditQueriesParam, LooseBBoxParam, CachingParam)
 
   override def canProcess(params: java.util.Map[String,Serializable]) = params.containsKey(BigTableNameParam.key)
 
@@ -74,6 +76,7 @@ object HBaseDataStoreFactory {
     val BigTableNameParam  = new Param("bigtable.table.name", classOf[String], "Table name", true)
     val ConnectionParam    = new Param("connection", classOf[Connection], "Connection", false)
     val LooseBBoxParam     = GeoMesaDataStoreFactory.LooseBBoxParam
+    val QueryThreadsParam  = GeoMesaDataStoreFactory.QueryThreadsParam
     val GenerateStatsParam = GeoMesaDataStoreFactory.GenerateStatsParam
     val AuditQueriesParam  = GeoMesaDataStoreFactory.AuditQueriesParam
     val QueryTimeoutParam  = GeoMesaDataStoreFactory.QueryTimeoutParam
@@ -83,6 +86,7 @@ object HBaseDataStoreFactory {
   case class HBaseDataStoreConfig(catalog: String,
                                   generateStats: Boolean,
                                   audit: Option[(AuditWriter, AuditProvider, String)],
+                                  queryThreads: Int,
                                   queryTimeout: Option[Long],
                                   looseBBox: Boolean,
                                   caching: Boolean) extends GeoMesaDataStoreConfig
