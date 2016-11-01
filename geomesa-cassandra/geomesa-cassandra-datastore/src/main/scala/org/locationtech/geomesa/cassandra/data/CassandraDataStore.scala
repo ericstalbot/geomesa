@@ -14,6 +14,7 @@ import java.nio.ByteBuffer
 import java.util
 import java.util.{Date, UUID}
 
+
 import com.datastax.driver.core._
 import com.google.common.collect.HashBiMap
 import com.vividsolutions.jts.geom.{Geometry, Point}
@@ -22,11 +23,106 @@ import org.geotools.feature.simple.SimpleFeatureTypeBuilder
 import org.geotools.feature.{AttributeTypeBuilder, NameImpl}
 import org.joda.time.{DateTime, Seconds, Weeks}
 import org.locationtech.geomesa.curve.{TimePeriod, Z3SFC}
+import org.locationtech.geomesa.index.api.GeoMesaIndexManager
+import org.locationtech.geomesa.index.geotools.{GeoMesaDataStore, GeoMesaFeatureWriter}
+import org.locationtech.geomesa.index.geotools.GeoMesaDataStoreFactory.GeoMesaDataStoreConfig
+import org.locationtech.geomesa.index.stats.{GeoMesaStats, NoopStats}
+import org.locationtech.geomesa.index.utils._
 import org.locationtech.geomesa.utils.geotools.SimpleFeatureTypes
 import org.locationtech.geomesa.utils.text.WKBUtils
 import org.locationtech.sfcurve.zorder.ZCurve2D
 import org.opengis.feature.`type`.{AttributeDescriptor, Name}
 import org.opengis.feature.simple.SimpleFeatureType
+import org.opengis.filter.Filter
+
+import scala.collection.JavaConversions._
+
+
+
+class CassandraDataStore(session: Session, keyspaceMetadata: KeyspaceMetadata, ns: URI, config: GeoMesaDataStoreConfig) extends
+  GeoMesaDataStore[CassandraDataStore, CassandraFeature, Any, Any](config: GeoMesaDataStoreConfig) {
+
+
+  override def manager: GeoMesaIndexManager[CassandraDataStore, CassandraFeature, Any, Any] = ???
+
+  override protected def createFeatureWriterAppend(sft: SimpleFeatureType):
+    GeoMesaFeatureWriter[CassandraDataStore, CassandraFeature, Any, Any, _] = ???
+
+  override protected def createFeatureWriterModify(sft: SimpleFeatureType, filter: Filter):
+    GeoMesaFeatureWriter[CassandraDataStore, CassandraFeature, Any, Any, _] = ???
+
+  override def stats: GeoMesaStats = NoopStats
+
+  override def metadata: GeoMesaMetadata[String] =
+    new CassandraBackedMetaData(session, config.catalog, MetadataStringSerializer)
+
+
+  /**
+    * Gets and acquires a distributed lock based on the key.
+    * Make sure that you 'release' the lock in a finally block.
+    *
+    * @param key key to lock on - equivalent to a path in zookeeper
+    * @return the lock
+    */
+  override protected def acquireDistributedLock(key: String): Releasable = ???
+
+  /**
+    * Gets and acquires a distributed lock based on the key.
+    * Make sure that you 'release' the lock in a finally block.
+    *
+    * @param key     key to lock on - equivalent to a path in zookeeper
+    * @param timeOut how long to wait to acquire the lock, in millis
+    * @return the lock, if obtained
+    */
+  override protected def acquireDistributedLock(key: String, timeOut: Long): Option[Releasable] = ???
+
+
+/*
+
+}
+
+
+
+
+
+
+
+class CassandraDataStore(session: Session, keyspaceMetadata: KeyspaceMetadata, ns: URI) extends ContentDataStore {
+    import scala.collection.JavaConversions._
+*/
+  def createFeatureSource(contentEntry: ContentEntry): ContentFeatureSource =
+    new CassandraFeatureStore(contentEntry)
+
+  override def createSchema(featureType: SimpleFeatureType): Unit = {
+    // validate dtg
+    featureType.getAttributeDescriptors
+      .find { ad => ad.getType.getBinding.isAssignableFrom(classOf[java.util.Date]) }
+      .getOrElse(throw new IllegalArgumentException("Could not find a dtg field"))
+
+    // validate geometry
+    featureType.getAttributeDescriptors
+      .find { ad => ad.getType.getBinding.isAssignableFrom(classOf[Point]) }
+      .getOrElse(throw new IllegalArgumentException("Could not find a valid point geometry"))
+
+    val cols =
+      featureType.getAttributeDescriptors.map { ad =>
+        s"${ad.getLocalName}  ${CassandraDataStore.typeMap(ad.getType.getBinding).getName.toString}"
+      }.mkString(",")
+    val colCreate = s"(pkz int, z31 bigint, fid text, $cols, PRIMARY KEY (pkz, z31, fid))"
+    val stmt = s"create table ${featureType.getTypeName} $colCreate"
+    session.execute(stmt)
+  }
+
+
+  def createContentState(entry: ContentEntry): ContentState =
+    new CassandraContentState(entry, session, keyspaceMetadata.getTable(entry.getTypeName))
+
+  def createTypeNames(): util.List[Name] =
+    keyspaceMetadata.getTables.map { t => new NameImpl(ns.toString, t.getName) }.toList
+
+  override def dispose(): Unit = if (session != null) session.close()
+}
+
 
 object CassandraDataStore {
   import scala.collection.JavaConversions._
@@ -87,43 +183,11 @@ object CassandraDataStore {
       else DefaultSerializer
     }
   }
+
 }
 
-class CassandraDataStore(session: Session, keyspaceMetadata: KeyspaceMetadata, ns: URI) extends ContentDataStore {
-  import scala.collection.JavaConversions._
-
-  override def createFeatureSource(contentEntry: ContentEntry): ContentFeatureSource =
-    new CassandraFeatureStore(contentEntry)
-
-  override def createSchema(featureType: SimpleFeatureType): Unit = {
-    // validate dtg
-    featureType.getAttributeDescriptors
-      .find { ad => ad.getType.getBinding.isAssignableFrom(classOf[java.util.Date]) }
-      .getOrElse(throw new IllegalArgumentException("Could not find a dtg field"))
-
-    // validate geometry
-    featureType.getAttributeDescriptors
-      .find { ad => ad.getType.getBinding.isAssignableFrom(classOf[Point]) }
-      .getOrElse(throw new IllegalArgumentException("Could not find a valid point geometry"))
-
-    val cols =
-      featureType.getAttributeDescriptors.map { ad =>
-        s"${ad.getLocalName}  ${CassandraDataStore.typeMap(ad.getType.getBinding).getName.toString}"
-      }.mkString(",")
-    val colCreate = s"(pkz int, z31 bigint, fid text, $cols, PRIMARY KEY (pkz, z31, fid))"
-    val stmt = s"create table ${featureType.getTypeName} $colCreate"
-    session.execute(stmt)
-  }
 
 
-  override def createContentState(entry: ContentEntry): ContentState =
-    new CassandraContentState(entry, session, keyspaceMetadata.getTable(entry.getTypeName))
-
-  override def createTypeNames(): util.List[Name] =
-    keyspaceMetadata.getTables.map { t => new NameImpl(ns.toString, t.getName) }.toList
-
-  override def dispose(): Unit = if (session != null) session.close()
-}
 
 object CassandraPrimaryKey {
 
@@ -155,5 +219,6 @@ object CassandraPrimaryKey {
   val SFC2D = new ZCurve2D(math.pow(2,5).toInt)
   val SFC3D = Z3SFC(TimePeriod.Week)
 }
+
 
 

@@ -30,6 +30,9 @@ import scala.collection.JavaConversions._
 class CassandraFeatureStore(entry: ContentEntry) extends ContentFeatureStore(entry, Query.ALL)
   with ContentFeatureSourceInfo {
 
+
+
+
   private lazy val contentState = entry.getState(getTransaction).asInstanceOf[CassandraContentState]
 
   override def getWriterInternal(query: Query, flags: Int): FW[SimpleFeatureType, SimpleFeature] = {

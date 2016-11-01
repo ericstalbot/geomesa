@@ -19,6 +19,7 @@ class CassandraContentState(entry: ContentEntry, val session: Session, val table
 
   import scala.collection.JavaConversions._
 
+
   val sft: SimpleFeatureType = CassandraDataStore.getSchema(entry.getName, tableMetadata)
   val attrNames = sft.getAttributeDescriptors.map(_.getLocalName)
   val selectClause = (Array("fid") ++ attrNames).mkString(",")
