@@ -1,9 +1,12 @@
 package org.locationtech.geomesa.cassandra.data
 
 import com.datastax.driver.core.Session
+import com.datastax.driver.core.exceptions.InvalidQueryException
+import com.datastax.driver.core.exceptions.InvalidQueryException._
 import com.typesafe.scalalogging.LazyLogging
-
 import org.locationtech.geomesa.index.utils.{GeoMesaMetadata, MetadataSerializer}
+
+import scala.util.{Try,Success,Failure}
 
 import scala.collection.JavaConversions._
 
@@ -18,6 +21,7 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
     * @return simple feature type names
     */
   override def getFeatureTypes: Array[String] = {
+    ensureTableExists()
     val rows = session.execute(s"SELECT typeName FROM $catalog")
     rows.iterator().map(_.getString("typeName")).toArray.distinct
   }
@@ -30,10 +34,14 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
     * @param value    value
     */
   override def insert(typeName: String, key: String, value: T): Unit = {
-    session.execute(s"INSERT INTO $catalog (typeName, key, value) VALUES ($typeName, $key, $value)")
-    //todo: over write value if key already exists
-    //todo: when/where do we run CREATE TABLE?
+    ensureTableExists()
+    remove(typeName, key)
+    val escValue = value.toString().replace("'", "''")
+    val s = s"INSERT INTO $catalog (typeName, key, value) VALUES ('$typeName', '$key', '$escValue')"
+    println(s)
+    session.execute(s)
     //todo: query parameterization to prevent injection
+    //todo: also escape special characters [ ]
   }
 
 
@@ -56,7 +64,7 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
     * @param key      key
     */
   override def remove(typeName: String, key: String): Unit = {
-    session.execute(s"DELETE FROM $catalog WHERE (typeName == $typeName) && (key == $key)")
+    session.execute(s"""DELETE FROM $catalog WHERE (typeName = '$typeName') and (key = '$key')""")
   }
 
   /**
@@ -68,10 +76,15 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
     * @return value, if present
     */
   override def read(typeName: String, key: String, cache: Boolean): Option[T] = {
-    val rows = session.execute(s"select value from $catalog where ($typeName == typeName) and ($key == key)")
-    Option(rows.one().getString("value").asInstanceOf[T])
+    Try {
+      val s = s"""select value from $catalog where (typeName = '$typeName') and (key = '$key')"""
+      session.execute(s)
+    } match {
+      case Success(rows) => Option(rows.one().getString("value").asInstanceOf[T])
+      case Failure(f) => None
+    }
   }
-
+  //select value from mycatalog where (testType = typeName) and (attributes = key)
   /**
     * Invalidates any cached value for the given key
     *
@@ -88,9 +101,17 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
   override def delete(typeName: String): Unit = {
     session.execute(s"DELETE FROM $catalog WHERE typeName == $typeName")
   }
+
+
+  def ensureTableExists(): Unit = {
+    println("//////////////////////////////////////////making table")
+    session.execute(s"CREATE TABLE IF NOT EXISTS $catalog (typeName text, key text, value text, PRIMARY KEY (typeName, key))")
+  }
+
+
 }
 
 
-
+//mvn <goals> -rf :geomesa-cassandra-datastore_2.11
 
 

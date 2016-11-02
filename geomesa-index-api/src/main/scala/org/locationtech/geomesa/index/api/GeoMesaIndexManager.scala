@@ -51,6 +51,10 @@ trait GeoMesaIndexManager[O <: GeoMesaDataStore[O, F, W, Q], F <: WrappedFeature
       case Some(e) => e.toString.split(",").map(_.trim).flatMap(n => CurrentIndices.find(_.name.equalsIgnoreCase(n)))
     }
     val supported = indices.collect { case i if i.supports(sft) => (i.name, i.version, IndexMode.ReadWrite) }
+    println("supported")
+    println(supported)
+
+
     sft.setIndices(supported)
   }
 }

@@ -95,6 +95,7 @@ abstract class GeoMesaDataStore[DS <: GeoMesaDataStore[DS, F, W, Q], F <: Wrappe
    * @param sft type to create
    */
   override def createSchema(sft: SimpleFeatureType): Unit = {
+    println("/////////////////////////////////createSchema")
     if (getSchema(sft.getTypeName) == null) {
       val lock = acquireCatalogLock()
       try {

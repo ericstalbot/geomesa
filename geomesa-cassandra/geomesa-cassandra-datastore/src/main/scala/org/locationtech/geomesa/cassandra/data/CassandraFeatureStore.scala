@@ -27,6 +27,8 @@ import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
 
 import scala.collection.JavaConversions._
 
+/*
+
 class CassandraFeatureStore(entry: ContentEntry) extends ContentFeatureStore(entry, Query.ALL)
   with ContentFeatureSourceInfo {
 
@@ -178,3 +180,4 @@ class CassandraFeatureStore(entry: ContentEntry) extends ContentFeatureStore(ent
     builder.buildFeature(fid, attrs.toArray)
   }
 }
+*/

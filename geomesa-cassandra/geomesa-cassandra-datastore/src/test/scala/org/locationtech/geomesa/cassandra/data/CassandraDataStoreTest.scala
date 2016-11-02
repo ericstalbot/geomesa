@@ -57,6 +57,7 @@ class CassandraDataStoreTest extends Specification {
       ok
     }
 
+    /*
     "parse simpleType to Cassandra Types" >> {
       val simpleFeatureType = SimpleFeatureTypes.createType("test:test",
         "string:String,int:Int,float:Float,double:Double,long:Long,boolean:Boolean,*geom:Point:srid=4326,dtg:Date")
@@ -66,6 +67,7 @@ class CassandraDataStoreTest extends Specification {
       }
       ok
     }
+    */
 
     "fail if no dtg in schema" >> {
       val ds = getDataStore

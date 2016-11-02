@@ -11,9 +11,11 @@ package org.locationtech.geomesa.cassandra.data
 import com.datastax.driver.core._
 import org.geotools.data.store._
 import org.geotools.feature.simple.SimpleFeatureBuilder
-import org.locationtech.geomesa.cassandra.data.CassandraDataStore.FieldSerializer
+import org.locationtech.geomesa.cassandra.data.CassandraDataStore
 import org.locationtech.geomesa.utils.text.ObjectPoolFactory
 import org.opengis.feature.simple.SimpleFeatureType
+
+/*
 
 class CassandraContentState(entry: ContentEntry, val session: Session, val tableMetadata: TableMetadata) extends ContentState(entry) {
 
@@ -38,3 +40,5 @@ class CassandraContentState(entry: ContentEntry, val session: Session, val table
   }
 
 }
+
+*/

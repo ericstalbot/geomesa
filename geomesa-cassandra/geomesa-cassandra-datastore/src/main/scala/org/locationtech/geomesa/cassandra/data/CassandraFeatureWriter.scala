@@ -18,6 +18,8 @@ import org.locationtech.geomesa.features.ScalaSimpleFeature
 import org.locationtech.geomesa.utils.text.WKBUtils
 import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
 
+/*
+
 trait CassandraFeatureWriter extends FW[SimpleFeatureType, SimpleFeature] {
   import CassandraDataStore._
   import org.locationtech.geomesa.utils.geotools.RichSimpleFeatureType._
@@ -78,3 +80,5 @@ class AppendFW(val sft: SimpleFeatureType, val session: Session) extends Cassand
 class UpdateFW(val sft: SimpleFeatureType, val session: Session) extends CassandraFeatureWriter {
   override def hasNext: Boolean = true
 }
+
+*/
