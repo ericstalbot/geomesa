@@ -1,13 +1,15 @@
 package org.locationtech.geomesa.cassandra.data
 
+import java.nio.charset.StandardCharsets
+
 import com.datastax.driver.core.Session
 import com.datastax.driver.core.exceptions.InvalidQueryException
 import com.datastax.driver.core.exceptions.InvalidQueryException._
+import com.datastax.driver.core.utils.Bytes
 import com.typesafe.scalalogging.LazyLogging
 import org.locationtech.geomesa.index.utils.{GeoMesaMetadata, MetadataSerializer}
 
-import scala.util.{Try,Success,Failure}
-
+import scala.util.{Failure, Success, Try}
 import scala.collection.JavaConversions._
 
 
@@ -36,12 +38,12 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
   override def insert(typeName: String, key: String, value: T): Unit = {
     ensureTableExists()
     remove(typeName, key)
-    val escValue = value.toString().replace("'", "''")
-    val s = s"INSERT INTO $catalog (typeName, key, value) VALUES ('$typeName', '$key', '$escValue')"
-    println(s)
-    session.execute(s)
-    //todo: query parameterization to prevent injection
-    //todo: also escape special characters [ ]
+
+    val s = s"INSERT INTO $catalog (typeName, key, value) VALUES (?, ?, ?)"
+
+    session.execute(s, typeName, key, value.asInstanceOf[String])
+
+
   }
 
 
@@ -76,6 +78,8 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
     * @return value, if present
     */
   override def read(typeName: String, key: String, cache: Boolean): Option[T] = {
+    println(typeName)
+    println(key)
     Try {
       val s = s"""select value from $catalog where (typeName = '$typeName') and (key = '$key')"""
       session.execute(s)
@@ -104,7 +108,7 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
 
 
   def ensureTableExists(): Unit = {
-    println("//////////////////////////////////////////making table")
+
     session.execute(s"CREATE TABLE IF NOT EXISTS $catalog (typeName text, key text, value text, PRIMARY KEY (typeName, key))")
   }
 
@@ -112,6 +116,5 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
 }
 
 
-//mvn <goals> -rf :geomesa-cassandra-datastore_2.11
 
 

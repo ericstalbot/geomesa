@@ -21,6 +21,7 @@ import org.geotools.data.store._
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder
 import org.geotools.feature.{AttributeTypeBuilder, NameImpl}
 import org.joda.time.{DateTime, Seconds, Weeks}
+import org.locationtech.geomesa.cassandra.{CassandraDataStoreType, CassandraFeatureWriterType, CassandraIndexManagerType}
 import org.locationtech.geomesa.cassandra.index.CassandraFeatureIndex
 import org.locationtech.geomesa.curve.{TimePeriod, Z3SFC}
 import org.locationtech.geomesa.index.api.GeoMesaIndexManager
@@ -34,25 +35,22 @@ import org.locationtech.sfcurve.zorder.ZCurve2D
 import org.opengis.feature.`type`.{AttributeDescriptor, Name}
 import org.opengis.feature.simple.SimpleFeatureType
 import org.opengis.filter.Filter
-
 import org.locationtech.geomesa.cassandra.index.CassandraFeatureIndex
 
 import scala.collection.JavaConversions._
 
-
-
-class CassandraDataStore(session: Session, keyspaceMetadata: KeyspaceMetadata, ns: URI, config: GeoMesaDataStoreConfig)
-    extends GeoMesaDataStore[CassandraDataStore, CassandraFeature, Any, Any](config: GeoMesaDataStoreConfig)
+class CassandraDataStore(val session: Session, keyspaceMetadata: KeyspaceMetadata, ns: URI, config: GeoMesaDataStoreConfig)
+    extends CassandraDataStoreType(config: GeoMesaDataStoreConfig)
     with LocalLocking {
 
 
-  override def manager: GeoMesaIndexManager[CassandraDataStore, CassandraFeature, Any, Any] = CassandraFeatureIndex
+  override def manager: CassandraIndexManagerType = CassandraFeatureIndex
 
-  override protected def createFeatureWriterAppend(sft: SimpleFeatureType):
-    GeoMesaFeatureWriter[CassandraDataStore, CassandraFeature, Any, Any, _] = ???
+  override protected def createFeatureWriterAppend(sft: SimpleFeatureType): CassandraFeatureWriterType =
+      new CassandraAppendFeatureWriter(sft, this)
 
-  override protected def createFeatureWriterModify(sft: SimpleFeatureType, filter: Filter):
-    GeoMesaFeatureWriter[CassandraDataStore, CassandraFeature, Any, Any, _] = ???
+  override protected def createFeatureWriterModify(sft: SimpleFeatureType, filter: Filter): CassandraFeatureWriterType = ???
+
 
   override def stats: GeoMesaStats = NoopStats
 
@@ -113,7 +111,7 @@ class CassandraDataStore(session: Session, keyspaceMetadata: KeyspaceMetadata, n
   override def dispose(): Unit = if (session != null) session.close()
 }
 
-/*
+
 object CassandraDataStore {
   import scala.collection.JavaConversions._
 
@@ -179,7 +177,7 @@ object CassandraDataStore {
 }
 
 
-*/
+
 
 object CassandraPrimaryKey {
 

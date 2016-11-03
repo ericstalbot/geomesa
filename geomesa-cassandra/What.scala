@@ -4,11 +4,14 @@ import scala.collection.JavaConversions._
 
 
 import com.vividsolutions.jts.geom._
-import org.geotools.feature.simple.SimpleFeatureTypeBuilder
+import org.geotools.geometry.jts.JTSFactoryFinder;
+import org.geotools.feature.simple.{SimpleFeatureTypeBuilder, SimpleFeatureBuilder}
 
 import org.geotools.data.Transaction
 
-println("heyhey")
+import org.locationtech.geomesa.cassandra.data.CassandraAppendFeatureWriter
+
+
 
 val params = Map[String, String](
 
@@ -28,6 +31,32 @@ val params = Map[String, String](
 val ds = DataStoreFinder.getDataStore(params)
 
 
+//////////////////////////
+//create the builder
+val builder = new SimpleFeatureTypeBuilder()
+
+//set global state
+builder.setName( "testType2" )
+builder.setNamespaceURI( "http://www.geotools.org/" )
+//builder.setSRS( "EPSG:4326" )
+
+//add attributes
+builder.add( "intProperty", classOf[java.lang.Integer] )
+builder.add( "pointProperty", classOf[Point] )
+
+//build the type
+val sft = builder.buildFeatureType();
+
+ds.createSchema(sft)
+
+///////////////////////////
+
+
+
+
+
+
+
 //create the builder
 val builder = new SimpleFeatureTypeBuilder()
 
@@ -45,5 +74,27 @@ val sft = builder.buildFeatureType();
 
 ds.createSchema(sft)
 
-val fw = ds.getFeatureWriterAppend(sft.getTypeName, Transaction.AUTO_COMMIT)
+val fw = ds.getFeatureWriterAppend(sft.getTypeName, Transaction.AUTO_COMMIT).asInstanceOf[CassandraAppendFeatureWriter]
+
+
+
+
+val geometry_factory = JTSFactoryFinder.getGeometryFactory(null)
+
+val point = geometry_factory.createPoint(new Coordinate(0, 0))
+
+
+
+val feature_builder = new SimpleFeatureBuilder(sft)
+
+
+feature_builder.add(1)
+feature_builder.add(point)
+
+val feature = feature_builder.buildFeature("fid")
+
+//fw.writeFeature(feature)
+
+fw.currentFeature = feature
+fw.write()
 
