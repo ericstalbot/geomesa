@@ -57,7 +57,6 @@ class CassandraDataStoreTest extends Specification {
       ok
     }
 
-    /*
     "parse simpleType to Cassandra Types" >> {
       val simpleFeatureType = SimpleFeatureTypes.createType("test:test",
         "string:String,int:Int,float:Float,double:Double,long:Long,boolean:Boolean,*geom:Point:srid=4326,dtg:Date")
@@ -67,7 +66,6 @@ class CassandraDataStoreTest extends Specification {
       }
       ok
     }
-    */
 
     "fail if no dtg in schema" >> {
       val ds = getDataStore
@@ -213,17 +211,11 @@ class CassandraDataStoreTest extends Specification {
 
   def getDataStore: DataStore = {
     import scala.collection.JavaConversions._
-
-    import CassandraDataStoreFactory.Params
-
-
-
-
     DataStoreFinder.getDataStore(
       Map(
-        Params.CONTACT_POINT.getName -> CassandraDataStoreTest.CP,
-        Params.KEYSPACE.getName -> "geomesa_cassandra",
-        Params.NAMESPACE.getName -> "http://geomesa.org"
+        CassandraDataStoreParams.CONTACT_POINT.getName -> CassandraDataStoreTest.CP,
+        CassandraDataStoreParams.KEYSPACE.getName -> "geomesa_cassandra",
+        CassandraDataStoreParams.NAMESPACE.getName -> "http://geomesa.org"
       )
     )
   }

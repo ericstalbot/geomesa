@@ -1,117 +1,69 @@
+/***********************************************************************
+* Copyright (c) 2013-2016 Commonwealth Computer Research, Inc.
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Apache License, Version 2.0
+* which accompanies this distribution and is available at
+* http://www.opensource.org/licenses/apache2.0.php.
+*************************************************************************/
+
 package org.locationtech.geomesa.cassandra.data
 
-import java.nio.charset.StandardCharsets
-
 import com.datastax.driver.core.Session
-import com.datastax.driver.core.exceptions.InvalidQueryException
-import com.datastax.driver.core.exceptions.InvalidQueryException._
-import com.datastax.driver.core.utils.Bytes
 import com.typesafe.scalalogging.LazyLogging
 import org.locationtech.geomesa.index.utils.{GeoMesaMetadata, MetadataSerializer}
 
-import scala.util.{Failure, Success, Try}
 import scala.collection.JavaConversions._
 
 
 class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: MetadataSerializer[T])
   extends GeoMesaMetadata[T] with LazyLogging {
 
-
-  /**
-    * Returns existing simple feature types
-    *
-    * @return simple feature type names
-    */
   override def getFeatureTypes: Array[String] = {
     ensureTableExists()
     val rows = session.execute(s"SELECT typeName FROM $catalog")
     rows.iterator().map(_.getString("typeName")).toArray.distinct
   }
 
-  /**
-    * Insert a value - any existing value under the given key will be overwritten
-    *
-    * @param typeName simple feature type name
-    * @param key      key
-    * @param value    value
-    */
   override def insert(typeName: String, key: String, value: T): Unit = {
     ensureTableExists()
     remove(typeName, key)
-
-    val s = s"INSERT INTO $catalog (typeName, key, value) VALUES (?, ?, ?)"
-
-    session.execute(s, typeName, key, value.asInstanceOf[String])
-
-
+    val q = s"INSERT INTO $catalog (typeName, key, value) VALUES (?, ?, ?)"
+    session.execute(q, typeName, key, value.asInstanceOf[String])
   }
 
-
-  /**
-    * Insert multiple values at once - may be more efficient than single inserts
-    *
-    * @param typeName simple feature type name
-    * @param kvPairs  key/values
-    */
   override def insert(typeName: String, kvPairs: Map[String, T]): Unit = {
     kvPairs.foreach { case (k, v) =>
       insert(typeName, k, v)
     }
   }
 
-  /**
-    * Delete a key
-    *
-    * @param typeName simple feature type name
-    * @param key      key
-    */
   override def remove(typeName: String, key: String): Unit = {
-    session.execute(s"""DELETE FROM $catalog WHERE (typeName = '$typeName') and (key = '$key')""")
+    ensureTableExists()
+    val q = s"DELETE FROM $catalog WHERE (typeName = ?) and (key = ?)"
+    session.execute(q, typeName, key)
   }
 
-  /**
-    * Reads a value
-    *
-    * @param typeName simple feature type name
-    * @param key      key
-    * @param cache    may return a cached value if true, otherwise may use a slower lookup
-    * @return value, if present
-    */
   override def read(typeName: String, key: String, cache: Boolean): Option[T] = {
-    println(typeName)
-    println(key)
-    Try {
-      val s = s"""select value from $catalog where (typeName = '$typeName') and (key = '$key')"""
-      session.execute(s)
-    } match {
-      case Success(rows) => Option(rows.one().getString("value").asInstanceOf[T])
-      case Failure(f) => None
+    ensureTableExists()
+    val q = s"select value from $catalog where (typeName = ?) and (key = ?)"
+    val row = Option(session.execute(q, typeName, key).one())
+    row match {
+      case Some(row_) => Option(row_.getString("value").asInstanceOf[T])
+      case None => None
     }
   }
-  //select value from mycatalog where (testType = typeName) and (attributes = key)
-  /**
-    * Invalidates any cached value for the given key
-    *
-    * @param typeName simple feature type name
-    * @param key      key
-    */
-  override def invalidateCache(typeName: String, key: String): Unit = {}
 
-  /**
-    * Deletes all values associated with a given feature type
-    *
-    * @param typeName simple feature type name
-    */
+  override def invalidateCache(typeName: String, key: String): Unit = ???
+
   override def delete(typeName: String): Unit = {
-    session.execute(s"DELETE FROM $catalog WHERE typeName == $typeName")
+    ensureTableExists()
+    val q = s"DELETE FROM $catalog WHERE typeName = ?"
+    session.execute(q, typeName)
   }
-
 
   def ensureTableExists(): Unit = {
-
     session.execute(s"CREATE TABLE IF NOT EXISTS $catalog (typeName text, key text, value text, PRIMARY KEY (typeName, key))")
   }
-
 
 }
 

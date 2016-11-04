@@ -292,8 +292,6 @@ object RichSimpleFeatureType {
     // gets (name, version, mode) of enabled indices
     def getIndices: Seq[(String, Int, IndexMode)] = {
       def toTuple(string: String): (String, Int, IndexMode) = {
-        println("whatwhatwhatwhatwhatwhat")
-        println(string)
         val Array(n, v, m) = string.split(":")
         (n, v.toInt, new IndexMode(m.toInt))
       }

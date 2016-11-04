@@ -8,22 +8,11 @@
 
 package org.locationtech.geomesa.cassandra.data
 
-import java.nio.ByteBuffer
-import java.util.UUID
-
-import com.datastax.driver.core._
 import com.datastax.driver.core.utils.Bytes
-import org.geotools.data.{FeatureWriter => FW}
-import org.joda.time.DateTime
 import org.locationtech.geomesa.cassandra.{CassandraAppendFeatureWriterType, CassandraFeatureWriterType}
-import org.locationtech.geomesa.features.ScalaSimpleFeature
 import org.locationtech.geomesa.features.SerializationOption.SerializationOptions
 import org.locationtech.geomesa.features.kryo.KryoFeatureSerializer
-import org.locationtech.geomesa.index.geotools.{GeoMesaAppendFeatureWriter, GeoMesaFeatureWriter}
-import org.locationtech.geomesa.utils.text.WKBUtils
 import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
-import org.opengis.filter.Filter
-import com.google.common.collect.ImmutableMap
 
 
 class CassandraAppendFeatureWriter(sft: SimpleFeatureType, ds: CassandraDataStore)
@@ -35,32 +24,23 @@ class CassandraAppendFeatureWriter(sft: SimpleFeatureType, ds: CassandraDataStor
 trait CassandraFeatureWriter
     extends CassandraFeatureWriterType {
 
-
   private val serializer = new KryoFeatureSerializer(sft, SerializationOptions.withoutId)
 
   override protected def createMutators(tables: Seq[String]): Seq[String] = {
+    //Currently this function doesn't do anything but return the argument unchanged.
+    //See also: CassandraFeatureIndex.createInsert
+    //todo: determine if there is a useful and reasonable thing to do here, or if we need to refactor to avoid this for cassandra
     tables
   }
 
   override protected def createWrites(mutators: Seq[String]): Seq[((Array[Byte], CassandraFeature)) => Unit] =
-
     mutators.map(
       tableName =>
         (t: (Array[Byte], CassandraFeature)) => {
-
-
           val (idx, feature) = t
-          println(idx)
-
-
-
           val q = s"INSERT INTO $tableName (idx, feature) VALUES (?, ?)"
-
-          val rs = ds.session.execute(
-            q,
-            Bytes.toHexString(idx), Bytes.toHexString(feature.value))
+          ds.session.execute(q, Bytes.toHexString(idx), Bytes.toHexString(feature.value)).asInstanceOf[Unit]
         }
-
     )
 
   override protected def createRemoves(mutators: Seq[String]): Seq[((Array[Byte], CassandraFeature)) => Unit] = ???

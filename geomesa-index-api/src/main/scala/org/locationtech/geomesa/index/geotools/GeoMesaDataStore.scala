@@ -95,7 +95,6 @@ abstract class GeoMesaDataStore[DS <: GeoMesaDataStore[DS, F, W, Q], F <: Wrappe
    * @param sft type to create
    */
   override def createSchema(sft: SimpleFeatureType): Unit = {
-
     if (getSchema(sft.getTypeName) == null) {
       val lock = acquireCatalogLock()
       try {
@@ -114,7 +113,7 @@ abstract class GeoMesaDataStore[DS <: GeoMesaDataStore[DS, F, W, Q], F <: Wrappe
           (sft.getUserData.keySet -- reloadedSft.getUserData.keySet)
               .foreach(k => reloadedSft.getUserData.put(k, sft.getUserData.get(k)))
 
-          // create the tables in the database
+          // create the tables in accumulo
           manager.indices(reloadedSft, IndexMode.Any).foreach(_.configure(reloadedSft, this))
         }
       } finally {

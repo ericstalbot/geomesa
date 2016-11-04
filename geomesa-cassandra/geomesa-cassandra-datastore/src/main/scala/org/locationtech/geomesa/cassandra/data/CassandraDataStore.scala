@@ -8,34 +8,19 @@
 
 package org.locationtech.geomesa.cassandra.data
 
-import java.math.BigInteger
 import java.net.URI
-import java.nio.ByteBuffer
 import java.util
-import java.util.{Date, UUID}
 
 import com.datastax.driver.core._
-import com.google.common.collect.HashBiMap
-import com.vividsolutions.jts.geom.{Geometry, Point}
-import org.geotools.data.store._
-import org.geotools.feature.simple.SimpleFeatureTypeBuilder
-import org.geotools.feature.{AttributeTypeBuilder, NameImpl}
-import org.joda.time.{DateTime, Seconds, Weeks}
-import org.locationtech.geomesa.cassandra.{CassandraDataStoreType, CassandraFeatureWriterType, CassandraIndexManagerType}
+import org.geotools.feature.NameImpl
 import org.locationtech.geomesa.cassandra.index.CassandraFeatureIndex
-import org.locationtech.geomesa.curve.{TimePeriod, Z3SFC}
-import org.locationtech.geomesa.index.api.GeoMesaIndexManager
-import org.locationtech.geomesa.index.geotools.{GeoMesaDataStore, GeoMesaFeatureWriter}
+import org.locationtech.geomesa.cassandra.{CassandraDataStoreType, CassandraFeatureWriterType, CassandraIndexManagerType}
 import org.locationtech.geomesa.index.geotools.GeoMesaDataStoreFactory.GeoMesaDataStoreConfig
 import org.locationtech.geomesa.index.stats.{GeoMesaStats, NoopStats}
 import org.locationtech.geomesa.index.utils._
-import org.locationtech.geomesa.utils.geotools.SimpleFeatureTypes
-import org.locationtech.geomesa.utils.text.WKBUtils
-import org.locationtech.sfcurve.zorder.ZCurve2D
-import org.opengis.feature.`type`.{AttributeDescriptor, Name}
+import org.opengis.feature.`type`.Name
 import org.opengis.feature.simple.SimpleFeatureType
 import org.opengis.filter.Filter
-import org.locationtech.geomesa.cassandra.index.CassandraFeatureIndex
 
 import scala.collection.JavaConversions._
 
@@ -43,41 +28,39 @@ class CassandraDataStore(val session: Session, keyspaceMetadata: KeyspaceMetadat
     extends CassandraDataStoreType(config: GeoMesaDataStoreConfig)
     with LocalLocking {
 
-
   override def manager: CassandraIndexManagerType = CassandraFeatureIndex
 
   override protected def createFeatureWriterAppend(sft: SimpleFeatureType): CassandraFeatureWriterType =
-      new CassandraAppendFeatureWriter(sft, this)
+    new CassandraAppendFeatureWriter(sft, this)
 
   override protected def createFeatureWriterModify(sft: SimpleFeatureType, filter: Filter): CassandraFeatureWriterType = ???
-
 
   override def stats: GeoMesaStats = NoopStats
 
   override def metadata: GeoMesaMetadata[String] =
     new CassandraBackedMetaData(session, config.catalog, MetadataStringSerializer)
 
+  def createTypeNames(): util.List[Name] =
+    keyspaceMetadata.getTables.map { t => new NameImpl(ns.toString, t.getName) }.toList
 
-
-
-/*
+  override def dispose(): Unit = if (session != null) session.close()
 
 }
 
 
 
-
+/*
 
 
 
 class CassandraDataStore(session: Session, keyspaceMetadata: KeyspaceMetadata, ns: URI) extends ContentDataStore {
     import scala.collection.JavaConversions._
-*/
+
   //def createFeatureSource(contentEntry: ContentEntry): ContentFeatureSource =
   //  new CassandraFeatureStore(contentEntry)
 
 
-  /*
+
   override def createSchema(featureType: SimpleFeatureType): Unit = {
     // validate dtg
     featureType.getAttributeDescriptors
@@ -98,18 +81,15 @@ class CassandraDataStore(session: Session, keyspaceMetadata: KeyspaceMetadata, n
     session.execute(stmt)
   }
 
-  */
 
-  /*
+
+
   def createContentState(entry: ContentEntry): ContentState =
     new CassandraContentState(entry, session, keyspaceMetadata.getTable(entry.getTypeName))
-  */
 
-  def createTypeNames(): util.List[Name] =
-    keyspaceMetadata.getTables.map { t => new NameImpl(ns.toString, t.getName) }.toList
 
-  override def dispose(): Unit = if (session != null) session.close()
-}
+
+
 
 
 object CassandraDataStore {
@@ -212,3 +192,4 @@ object CassandraPrimaryKey {
 
 
 
+*/

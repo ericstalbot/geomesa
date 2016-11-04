@@ -13,7 +13,7 @@ import org.locationtech.geomesa.index.api._
 import org.locationtech.geomesa.index.geotools.{GeoMesaAppendFeatureWriter, GeoMesaDataStore, GeoMesaFeatureWriter, GeoMesaModifyFeatureWriter}
 import org.locationtech.geomesa.utils.conf.GeoMesaSystemProperties.SystemProperty
 
-package object cassandra {
+package object cassandra {                                                                                            //Integer here is a placeholder
   type CassandraDataStoreType = GeoMesaDataStore[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer]
   type CassandraFeatureIndexType = GeoMesaFeatureIndex[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer]
   type CassandraFilterPlanType = FilterPlan[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer]
@@ -26,6 +26,6 @@ package object cassandra {
   type CassandraModifyFeatureWriterType = GeoMesaModifyFeatureWriter[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer, String]
 
   object CassandraSystemProperties {
-    val WriteBatchSize = SystemProperty("geomesa.cassandra.write.batch", null)
+    val WriteBatchSize = SystemProperty("geomesa.cassandra.write.batch", null)  //not sure if this is used anywhere
   }
 }

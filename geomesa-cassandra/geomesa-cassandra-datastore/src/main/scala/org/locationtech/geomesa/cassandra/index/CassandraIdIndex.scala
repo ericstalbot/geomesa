@@ -11,8 +11,7 @@ package org.locationtech.geomesa.cassandra.index
 import org.locationtech.geomesa.cassandra.data.{CassandraDataStore, CassandraFeature}
 import org.locationtech.geomesa.index.index.IdIndex
 
-case object CassandraIdIndex
+case object CassandraIdIndex                                                                                        //Integer here is a placeholder
     extends CassandraFeatureIndex with IdIndex[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer, String] {
-
   override val version: Int = 1
 }

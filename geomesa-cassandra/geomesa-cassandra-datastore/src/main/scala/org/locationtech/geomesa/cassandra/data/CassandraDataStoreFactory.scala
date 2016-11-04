@@ -79,12 +79,6 @@ object CassandraDataStoreFactory {
     val KEYSPACE      = new Param("geomesa.cassandra.keyspace"       , classOf[String], "Cassandra Keyspace", true)
     val NAMESPACE     = new Param("namespace", classOf[URI], "uri to a the namespace", false, null, new KVP(Parameter.LEVEL, "advanced"))
     val CATALOG       = new Param("catalog", classOf[String], "name of catalog table", true)
-
-    //todo: do we really need the name space parameter?
-    //todo: is my understanding of the catalog parameter correct?
-
-
-
     val LooseBBoxParam     = GeoMesaDataStoreFactory.LooseBBoxParam
     val QueryThreadsParam  = GeoMesaDataStoreFactory.QueryThreadsParam
     val GenerateStatsParam = GeoMesaDataStoreFactory.GenerateStatsParam
@@ -100,9 +94,4 @@ object CassandraDataStoreFactory {
                                       queryTimeout: Option[Long],
                                       looseBBox: Boolean,
                                       caching: Boolean) extends GeoMesaDataStoreConfig
-
-
 }
-
-
-
