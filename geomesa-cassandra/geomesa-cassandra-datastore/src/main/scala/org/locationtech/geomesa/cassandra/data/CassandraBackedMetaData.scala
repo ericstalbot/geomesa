@@ -10,13 +10,13 @@ package org.locationtech.geomesa.cassandra.data
 
 import com.datastax.driver.core.Session
 import com.typesafe.scalalogging.LazyLogging
-import org.locationtech.geomesa.index.utils.{GeoMesaMetadata, MetadataSerializer}
+import org.locationtech.geomesa.index.utils.GeoMesaMetadata
 
 import scala.collection.JavaConversions._
 
 
-class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: MetadataSerializer[T])
-  extends GeoMesaMetadata[T] with LazyLogging {
+class CassandraBackedMetaData(session: Session, catalog: String)
+  extends GeoMesaMetadata[String] with LazyLogging {
 
   override def getFeatureTypes: Array[String] = {
     ensureTableExists()
@@ -24,14 +24,14 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
     rows.iterator().map(_.getString("typeName")).toArray.distinct
   }
 
-  override def insert(typeName: String, key: String, value: T): Unit = {
+  override def insert(typeName: String, key: String, value: String): Unit = {
     ensureTableExists()
     remove(typeName, key)
     val q = s"INSERT INTO $catalog (typeName, key, value) VALUES (?, ?, ?)"
-    session.execute(q, typeName, key, value.asInstanceOf[String])
+    session.execute(q, typeName, key, value)
   }
 
-  override def insert(typeName: String, kvPairs: Map[String, T]): Unit = {
+  override def insert(typeName: String, kvPairs: Map[String, String]): Unit = {
     kvPairs.foreach { case (k, v) =>
       insert(typeName, k, v)
     }
@@ -43,12 +43,12 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
     session.execute(q, typeName, key)
   }
 
-  override def read(typeName: String, key: String, cache: Boolean): Option[T] = {
+  override def read(typeName: String, key: String, cache: Boolean): Option[String] = {
     ensureTableExists()
     val q = s"select value from $catalog where (typeName = ?) and (key = ?)"
     val row = Option(session.execute(q, typeName, key).one())
     row match {
-      case Some(row_) => Option(row_.getString("value").asInstanceOf[T])
+      case Some(row_) => Option(row_.getString("value"))
       case None => None
     }
   }
@@ -66,7 +66,3 @@ class CassandraBackedMetaData[T](session: Session, catalog: String, serializer: 
   }
 
 }
-
-
-
-

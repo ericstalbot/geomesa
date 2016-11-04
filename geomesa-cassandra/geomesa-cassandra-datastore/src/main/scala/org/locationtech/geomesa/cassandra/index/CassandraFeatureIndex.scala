@@ -8,9 +8,11 @@
 
 package org.locationtech.geomesa.cassandra.index
 
+import com.datastax.driver.core.utils.Bytes
 import org.geotools.factory.Hints
 import org.locationtech.geomesa.cassandra.data.{CassandraDataStore, CassandraFeature}
 import org.locationtech.geomesa.cassandra.{CassandraFeatureIndexType, CassandraFilterStrategyType, CassandraIndexManagerType, CassandraQueryPlanType}
+import org.locationtech.geomesa.index.api.{FilterStrategy, QueryPlan}
 import org.locationtech.geomesa.index.index.IndexAdapter
 import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
 import org.opengis.filter.Filter
@@ -26,7 +28,7 @@ object CassandraFeatureIndex extends CassandraIndexManagerType {
 
 
 trait CassandraFeatureIndex extends CassandraFeatureIndexType
-    with IndexAdapter[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer, String] {
+    with IndexAdapter[CassandraDataStore, CassandraFeature, (String, String), Integer, String] {
 
   override def configure(sft: SimpleFeatureType, ds: CassandraDataStore): Unit = {
     super.configure(sft, ds)
@@ -35,13 +37,8 @@ trait CassandraFeatureIndex extends CassandraFeatureIndexType
     ds.session.execute(q)
   }
 
-  override protected def createInsert(row: Array[Byte], feature: CassandraFeature): (Array[Byte], CassandraFeature) = {
-    //Currently this function doesn't do anything but return the arguments unchanged.
-    //This might be a case where the datastore/index abstractions, which are focused on accumulo and hbase,
-    //are not working well for Cassandra.
-    //See also: CassandraFeatureWriter.createMutators
-    //todo: determine if there is a useful and reasonable thing to do here, or if we need to refactor to avoid this for cassandra
-    return (row, feature)
+  override protected def createInsert(row: Array[Byte], feature: CassandraFeature): (String, String) = {
+    return (Bytes.toHexString(row), Bytes.toHexString(feature.value))
   }
 
 
@@ -50,14 +47,17 @@ trait CassandraFeatureIndex extends CassandraFeatureIndexType
 
   override protected def entriesToFeatures(sft: SimpleFeatureType, returnSft: SimpleFeatureType): (Any) => SimpleFeature = ???
 
-  override protected def createDelete(row: Array[Byte], feature: CassandraFeature): (Array[Byte], CassandraFeature) = ???
+  override protected def createDelete(row: Array[Byte], feature: CassandraFeature): (String, String) = ???
 
-  override protected def scanPlan(sft: SimpleFeatureType,
-                                  ds: CassandraDataStore,
-                                  filter: CassandraFilterStrategyType,
-                                  hints: Hints,
-                                  ranges: Seq[String],
-                                  ecql: Option[Filter]): CassandraQueryPlanType = ???
+
+  override protected def scanPlan(
+                                   sft: SimpleFeatureType,
+                                   ds: CassandraDataStore,
+                                   filter: CassandraFilterStrategyType,
+                                   hints: Hints,
+                                   ranges: Seq[String],
+                                   ecql: Option[Filter]): CassandraQueryPlanType = ???
+
 
   override protected def rangeExact(row: Array[Byte]): String = ???
 

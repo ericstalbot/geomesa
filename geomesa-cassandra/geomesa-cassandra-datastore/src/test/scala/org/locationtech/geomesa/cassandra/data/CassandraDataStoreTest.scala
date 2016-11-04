@@ -28,6 +28,8 @@ import org.locationtech.geomesa.utils.geotools.SimpleFeatureTypes
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 
+import org.locationtech.geomesa.cassandra.data.CassandraDataStoreFactory.Params._
+
 import collection.JavaConverters._
 
 @RunWith(classOf[JUnitRunner])
@@ -57,6 +59,7 @@ class CassandraDataStoreTest extends Specification {
       ok
     }
 
+    /*
     "parse simpleType to Cassandra Types" >> {
       val simpleFeatureType = SimpleFeatureTypes.createType("test:test",
         "string:String,int:Int,float:Float,double:Double,long:Long,boolean:Boolean,*geom:Point:srid=4326,dtg:Date")
@@ -66,6 +69,8 @@ class CassandraDataStoreTest extends Specification {
       }
       ok
     }
+    */
+
 
     "fail if no dtg in schema" >> {
       val ds = getDataStore
@@ -213,9 +218,16 @@ class CassandraDataStoreTest extends Specification {
     import scala.collection.JavaConversions._
     DataStoreFinder.getDataStore(
       Map(
-        CassandraDataStoreParams.CONTACT_POINT.getName -> CassandraDataStoreTest.CP,
-        CassandraDataStoreParams.KEYSPACE.getName -> "geomesa_cassandra",
-        CassandraDataStoreParams.NAMESPACE.getName -> "http://geomesa.org"
+        CONTACT_POINT.getName -> "127.0.0.1:9042",
+        KEYSPACE.getName -> "mykeyspace",
+        NAMESPACE.getName -> "mynamespace",
+        CATALOG.getName -> "mycatalog",
+        LooseBBoxParam.getName -> "",
+        QueryThreadsParam.getName -> "",
+        GenerateStatsParam.getName -> "",
+        AuditQueriesParam.getName -> "",
+        QueryTimeoutParam.getName -> "",
+        CachingParam.getName -> ""
       )
     )
   }

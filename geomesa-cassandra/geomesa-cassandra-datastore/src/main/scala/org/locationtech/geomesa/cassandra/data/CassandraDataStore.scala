@@ -37,8 +37,8 @@ class CassandraDataStore(val session: Session, keyspaceMetadata: KeyspaceMetadat
 
   override def stats: GeoMesaStats = NoopStats
 
-  override def metadata: GeoMesaMetadata[String] =
-    new CassandraBackedMetaData(session, config.catalog, MetadataStringSerializer)
+  override def metadata =
+    new CassandraBackedMetaData(session, config.catalog)
 
   def createTypeNames(): util.List[Name] =
     keyspaceMetadata.getTables.map { t => new NameImpl(ns.toString, t.getName) }.toList

@@ -14,16 +14,16 @@ import org.locationtech.geomesa.index.geotools.{GeoMesaAppendFeatureWriter, GeoM
 import org.locationtech.geomesa.utils.conf.GeoMesaSystemProperties.SystemProperty
 
 package object cassandra {                                                                                            //Integer here is a placeholder
-  type CassandraDataStoreType = GeoMesaDataStore[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer]
-  type CassandraFeatureIndexType = GeoMesaFeatureIndex[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer]
-  type CassandraFilterPlanType = FilterPlan[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer]
-  type CassandraFilterStrategyType = FilterStrategy[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer]
-  type CassandraQueryPlannerType = QueryPlanner[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer]
-  type CassandraQueryPlanType = QueryPlan[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer]
-  type CassandraIndexManagerType = GeoMesaIndexManager[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer]
-  type CassandraFeatureWriterType = GeoMesaFeatureWriter[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer, String]
-  type CassandraAppendFeatureWriterType = GeoMesaAppendFeatureWriter[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer, String]
-  type CassandraModifyFeatureWriterType = GeoMesaModifyFeatureWriter[CassandraDataStore, CassandraFeature, (Array[Byte], CassandraFeature), Integer, String]
+  type CassandraDataStoreType = GeoMesaDataStore[CassandraDataStore, CassandraFeature, (String, String), Integer]
+  type CassandraFeatureIndexType = GeoMesaFeatureIndex[CassandraDataStore, CassandraFeature, (String, String), Integer]
+  type CassandraFilterPlanType = FilterPlan[CassandraDataStore, CassandraFeature, (String, String), Integer]
+  type CassandraFilterStrategyType = FilterStrategy[CassandraDataStore, CassandraFeature, (String, String), Integer]
+  type CassandraQueryPlannerType = QueryPlanner[CassandraDataStore, CassandraFeature, (String, String), Integer]
+  type CassandraQueryPlanType = QueryPlan[CassandraDataStore, CassandraFeature, (String, String), Integer]
+  type CassandraIndexManagerType = GeoMesaIndexManager[CassandraDataStore, CassandraFeature, (String, String), Integer]
+  type CassandraFeatureWriterType = GeoMesaFeatureWriter[CassandraDataStore, CassandraFeature, (String, String), Integer, String]
+  type CassandraAppendFeatureWriterType = GeoMesaAppendFeatureWriter[CassandraDataStore, CassandraFeature, (String, String), Integer, String]
+  type CassandraModifyFeatureWriterType = GeoMesaModifyFeatureWriter[CassandraDataStore, CassandraFeature, (String, String), Integer, String]
 
   object CassandraSystemProperties {
     val WriteBatchSize = SystemProperty("geomesa.cassandra.write.batch", null)  //not sure if this is used anywhere

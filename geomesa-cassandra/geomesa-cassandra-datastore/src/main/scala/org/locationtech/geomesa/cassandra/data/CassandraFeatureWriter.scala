@@ -8,6 +8,7 @@
 
 package org.locationtech.geomesa.cassandra.data
 
+import com.datastax.driver.core.{PreparedStatement, SimpleStatement}
 import com.datastax.driver.core.utils.Bytes
 import org.locationtech.geomesa.cassandra.{CassandraAppendFeatureWriterType, CassandraFeatureWriterType}
 import org.locationtech.geomesa.features.SerializationOption.SerializationOptions
@@ -27,23 +28,19 @@ trait CassandraFeatureWriter
   private val serializer = new KryoFeatureSerializer(sft, SerializationOptions.withoutId)
 
   override protected def createMutators(tables: Seq[String]): Seq[String] = {
-    //Currently this function doesn't do anything but return the argument unchanged.
-    //See also: CassandraFeatureIndex.createInsert
-    //todo: determine if there is a useful and reasonable thing to do here, or if we need to refactor to avoid this for cassandra
-    tables
+    tables.map(tableName =>s"INSERT INTO $tableName (rowId, feature) VALUES (?, ?)")
   }
 
-  override protected def createWrites(mutators: Seq[String]): Seq[((Array[Byte], CassandraFeature)) => Unit] =
+  override protected def createWrites(mutators: Seq[String]): Seq[((String, String)) => Unit] =
     mutators.map(
-      tableName =>
-        (t: (Array[Byte], CassandraFeature)) => {
-          val (idx, feature) = t
-          val q = s"INSERT INTO $tableName (idx, feature) VALUES (?, ?)"
-          ds.session.execute(q, Bytes.toHexString(idx), Bytes.toHexString(feature.value)).asInstanceOf[Unit]
+      statement =>
+        (t: (String, String)) => {
+          val (rowId, feature) = t
+          ds.session.execute(statement, rowId, feature).asInstanceOf[Unit]
         }
     )
 
-  override protected def createRemoves(mutators: Seq[String]): Seq[((Array[Byte], CassandraFeature)) => Unit] = ???
+  override protected def createRemoves(mutators: Seq[String]): Seq[((String, String)) => Unit] = ???
 
   override protected def wrapFeature(feature: SimpleFeature): CassandraFeature =
     new CassandraFeature(feature, serializer)
