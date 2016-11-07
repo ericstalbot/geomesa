@@ -8,8 +8,6 @@
 
 package org.locationtech.geomesa.cassandra.data
 
-import com.datastax.driver.core.{PreparedStatement, SimpleStatement}
-import com.datastax.driver.core.utils.Bytes
 import org.locationtech.geomesa.cassandra.{CassandraAppendFeatureWriterType, CassandraFeatureWriterType}
 import org.locationtech.geomesa.features.SerializationOption.SerializationOptions
 import org.locationtech.geomesa.features.kryo.KryoFeatureSerializer
@@ -36,7 +34,7 @@ trait CassandraFeatureWriter
       statement =>
         (t: (String, String)) => {
           val (rowId, feature) = t
-          ds.session.execute(statement, rowId, feature).asInstanceOf[Unit]
+          val rs = ds.session.execute(statement, rowId, feature)
         }
     )
 

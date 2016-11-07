@@ -218,9 +218,9 @@ class CassandraDataStoreTest extends Specification {
     import scala.collection.JavaConversions._
     DataStoreFinder.getDataStore(
       Map(
-        CONTACT_POINT.getName -> "127.0.0.1:9042",
-        KEYSPACE.getName -> "mykeyspace",
-        NAMESPACE.getName -> "mynamespace",
+        CONTACT_POINT.getName -> CassandraDataStoreTest.CP,
+        KEYSPACE.getName -> "geomesa_cassandra",
+        NAMESPACE.getName -> "http://geomesa.org",
         CATALOG.getName -> "mycatalog",
         LooseBBoxParam.getName -> "",
         QueryThreadsParam.getName -> "",
@@ -233,6 +233,8 @@ class CassandraDataStoreTest extends Specification {
   }
 
 }
+
+
 
 object CassandraDataStoreTest {
   def host = EmbeddedCassandraServerHelper.getHost
