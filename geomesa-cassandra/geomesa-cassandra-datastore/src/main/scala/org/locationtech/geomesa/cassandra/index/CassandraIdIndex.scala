@@ -8,10 +8,11 @@
 
 package org.locationtech.geomesa.cassandra.index
 
+import com.datastax.driver.core.Row
 import org.locationtech.geomesa.cassandra.data.{CassandraDataStore, CassandraFeature}
 import org.locationtech.geomesa.index.index.IdIndex
 
-case object CassandraIdIndex                                                                                        //Integer here is a placeholder
-    extends CassandraFeatureIndex with IdIndex[CassandraDataStore, CassandraFeature, (String, String), Integer, String] {
+case object CassandraIdIndex
+    extends CassandraFeatureIndex with IdIndex[CassandraDataStore, CassandraFeature, (String, String), Row, Array[Byte]] {
   override val version: Int = 1
 }

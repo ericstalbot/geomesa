@@ -8,10 +8,11 @@
 
 package org.locationtech.geomesa.cassandra.index
 
+import com.datastax.driver.core.Row
 import org.locationtech.geomesa.cassandra.data.{CassandraDataStore, CassandraFeature}
 import org.locationtech.geomesa.index.index.Z3Index
 
-case object CassandraZ3Index                                                                                        //Integer here is a placeholder
-    extends CassandraFeatureIndex with Z3Index[CassandraDataStore, CassandraFeature, (String, String), Integer, String] {
+case object CassandraZ3Index
+    extends CassandraFeatureIndex with Z3Index[CassandraDataStore, CassandraFeature, (String, String), Row, Array[Byte]] {
   override val version: Int = 1
 }

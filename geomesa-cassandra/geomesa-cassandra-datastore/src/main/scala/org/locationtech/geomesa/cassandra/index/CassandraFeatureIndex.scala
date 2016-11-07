@@ -8,10 +8,14 @@
 
 package org.locationtech.geomesa.cassandra.index
 
+import com.datastax.driver.core.Row
 import com.datastax.driver.core.utils.Bytes
 import org.geotools.factory.Hints
-import org.locationtech.geomesa.cassandra.data.{CassandraDataStore, CassandraFeature}
+import org.geotools.filter.identity.FeatureIdImpl
+import org.locationtech.geomesa.cassandra.data.{CassandraDataStore, CassandraFeature, WhateverQueryPlan}
 import org.locationtech.geomesa.cassandra.{CassandraFeatureIndexType, CassandraFilterStrategyType, CassandraIndexManagerType, CassandraQueryPlanType}
+import org.locationtech.geomesa.features.SerializationOption.SerializationOptions
+import org.locationtech.geomesa.features.kryo.{KryoFeatureSerializer, ProjectingKryoFeatureDeserializer}
 import org.locationtech.geomesa.index.api.{FilterStrategy, QueryPlan}
 import org.locationtech.geomesa.index.index.IndexAdapter
 import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
@@ -28,7 +32,7 @@ object CassandraFeatureIndex extends CassandraIndexManagerType {
 
 
 trait CassandraFeatureIndex extends CassandraFeatureIndexType
-    with IndexAdapter[CassandraDataStore, CassandraFeature, (String, String), Integer, String] {
+    with IndexAdapter[CassandraDataStore, CassandraFeature, (String, String), Row, Array[Byte]] {
 
   override def configure(sft: SimpleFeatureType, ds: CassandraDataStore): Unit = {
     super.configure(sft, ds)
@@ -43,25 +47,49 @@ trait CassandraFeatureIndex extends CassandraFeatureIndexType
 
 
   //todo: implement these methods
-  override protected def range(start: Array[Byte], end: Array[Byte]): String = ???
+  override protected def range(start: Array[Byte], end: Array[Byte]): Array[Byte] = ???
 
-  override protected def entriesToFeatures(sft: SimpleFeatureType, returnSft: SimpleFeatureType): (Any) => SimpleFeature = ???
+  override protected def entriesToFeatures(sft: SimpleFeatureType, returnSft: SimpleFeatureType): (Row) => SimpleFeature = {
+    val getId = getIdFromRow(sft)
+    val deserializer = if (sft == returnSft) {
+      new KryoFeatureSerializer(sft, SerializationOptions.withoutId)
+    } else {
+      new ProjectingKryoFeatureDeserializer(sft, returnSft, SerializationOptions.withoutId)
+    }
+    (result) => {
+      deserializer.deserialize(Bytes.getArray(result.getBytes("feature")))
+    }
+  }
 
   override protected def createDelete(row: Array[Byte], feature: CassandraFeature): (String, String) = ???
 
 
-  override protected def scanPlan(
-                                   sft: SimpleFeatureType,
-                                   ds: CassandraDataStore,
-                                   filter: CassandraFilterStrategyType,
-                                   hints: Hints,
-                                   ranges: Seq[String],
-                                   ecql: Option[Filter]): CassandraQueryPlanType = ???
+  override protected def scanPlan(sft: SimpleFeatureType,
+                                  ds: CassandraDataStore,
+                                  filter: CassandraFilterStrategyType,
+                                  hints: Hints,
+                                  ranges: Seq[Array[Byte]],
+                                  ecql: Option[Filter]): CassandraQueryPlanType = {
+
+    import org.locationtech.geomesa.index.conf.QueryHints.RichHints
+    //must return a query plan
+    //the query plan has to have scan and entriesToFeatures methods
+
+    val table = getTableName(sft.getTypeName, ds)
+    val eToF = entriesToFeatures(sft, hints.getReturnSft)
 
 
-  override protected def rangeExact(row: Array[Byte]): String = ???
+    WhateverQueryPlan(filter, table, ranges, eToF)
+
+
+
+  }
+
+  override protected def rangeExact(row: Array[Byte]): Array[Byte] = {
+    row
+  }
 
   override def delete(sft: SimpleFeatureType, ds: CassandraDataStore, shared: Boolean): Unit = ???
 
-  override protected def rangePrefix(prefix: Array[Byte]): String = ???
+  override protected def rangePrefix(prefix: Array[Byte]): Array[Byte] = prefix
 }
