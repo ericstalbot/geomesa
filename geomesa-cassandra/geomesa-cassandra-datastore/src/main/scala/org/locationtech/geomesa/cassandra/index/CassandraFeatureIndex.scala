@@ -25,7 +25,7 @@ import org.opengis.filter.Filter
 object CassandraFeatureIndex extends CassandraIndexManagerType {
   // note: keep in priority order for running full table scans
   override def AllIndices: Seq[CassandraFeatureIndex] =
-      Seq(CassandraZ3Index, CassandraIdIndex) //todo: implement more indices for cassandra
+      Seq(CassandraZ3Index, CassandraZ2Index, CassandraIdIndex) //todo: implement more indices for cassandra
 
   override val CurrentIndices: Seq[CassandraFeatureIndex] = AllIndices
 }
@@ -46,9 +46,6 @@ trait CassandraFeatureIndex extends CassandraFeatureIndexType
   }
 
 
-  //todo: implement these methods
-  override protected def range(start: Array[Byte], end: Array[Byte]): Array[Byte] = ???
-
   override protected def entriesToFeatures(sft: SimpleFeatureType, returnSft: SimpleFeatureType): (Row) => SimpleFeature = {
     val getId = getIdFromRow(sft)
     val deserializer = if (sft == returnSft) {
@@ -56,9 +53,19 @@ trait CassandraFeatureIndex extends CassandraFeatureIndexType
     } else {
       new ProjectingKryoFeatureDeserializer(sft, returnSft, SerializationOptions.withoutId)
     }
+
     (result) => {
-      deserializer.deserialize(Bytes.getArray(result.getBytes("feature")))
+
+      val r = result.getString("feature")
+      val s = Bytes.fromHexString(r)
+      val t = Bytes.getArray(s)
+      val u = deserializer.deserialize(t)
+      u
+
     }
+
+    //todo: attach id to feature (see hbase)
+
   }
 
   override protected def createDelete(row: Array[Byte], feature: CassandraFeature): (String, String) = ???
@@ -72,24 +79,23 @@ trait CassandraFeatureIndex extends CassandraFeatureIndexType
                                   ecql: Option[Filter]): CassandraQueryPlanType = {
 
     import org.locationtech.geomesa.index.conf.QueryHints.RichHints
-    //must return a query plan
-    //the query plan has to have scan and entriesToFeatures methods
 
     val table = getTableName(sft.getTypeName, ds)
     val eToF = entriesToFeatures(sft, hints.getReturnSft)
 
-
     WhateverQueryPlan(filter, table, ranges, eToF)
 
-
-
   }
+
+  override def delete(sft: SimpleFeatureType, ds: CassandraDataStore, shared: Boolean): Unit = ???
 
   override protected def rangeExact(row: Array[Byte]): Array[Byte] = {
     row
   }
 
-  override def delete(sft: SimpleFeatureType, ds: CassandraDataStore, shared: Boolean): Unit = ???
+  override protected def range(start: Array[Byte], end: Array[Byte]): Array[Byte] = ???
 
-  override protected def rangePrefix(prefix: Array[Byte]): Array[Byte] = prefix
+  override protected def rangePrefix(prefix: Array[Byte]): Array[Byte] = ???
+
+
 }

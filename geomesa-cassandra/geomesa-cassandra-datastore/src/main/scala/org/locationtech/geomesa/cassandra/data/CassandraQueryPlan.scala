@@ -16,19 +16,13 @@ case class WhateverQueryPlan(filter: CassandraFilterStrategyType,
                              ranges: Seq[Array[Byte]],
                              entriesToFeatures: (Row) => SimpleFeature) extends CassandraQueryPlanType {
 
-
-
-  //val insert = session.prepare(s"INSERT INTO ${sft.getTypeName} (pkz, z31, fid, ${cols.mkString(",")}) values (${Seq.fill(3+cols.length)("?").mkString(",")})")
-
-
-
-  override def scan(ds: CassandraDataStore): CloseableIterator[Row] = {
+    override def scan(ds: CassandraDataStore): CloseableIterator[Row] = {
     import scala.collection.JavaConversions._
-    val q = s"select * from $table where rowid IN (${Seq.fill(ranges.length)("?").mkString(",")})"
-    println(q)
-    println(ranges)
+
+    val q = s"select rowid, blobAsText(feature) as feature from $table where rowid IN (${Seq.fill(ranges.length)("?").mkString(",")})"
+
     val r = ranges.map(Bytes.toHexString(_))
-    println(r)
+
     CloseableIterator(ds.session.execute(q, r: _*).iterator())
   }
 
