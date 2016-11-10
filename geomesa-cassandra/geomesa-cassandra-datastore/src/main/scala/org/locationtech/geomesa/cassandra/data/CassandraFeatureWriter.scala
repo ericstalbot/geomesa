@@ -14,11 +14,12 @@ import java.util.UUID
 import com.datastax.driver.core._
 import org.geotools.data.{FeatureWriter => FW}
 import org.joda.time.DateTime
+import org.locationtech.geomesa.cassandra.CassandraFeatureWriterType
 import org.locationtech.geomesa.features.ScalaSimpleFeature
 import org.locationtech.geomesa.utils.text.WKBUtils
 import org.opengis.feature.simple.{SimpleFeature, SimpleFeatureType}
 
-trait CassandraFeatureWriter extends FW[SimpleFeatureType, SimpleFeature] {
+trait CassandraFeatureWriter extends CassandraFeatureWriterType {
   import CassandraDataStore._
   import org.locationtech.geomesa.utils.geotools.RichSimpleFeatureType._
 
@@ -36,6 +37,13 @@ trait CassandraFeatureWriter extends FW[SimpleFeatureType, SimpleFeature] {
   val insert = session.prepare(s"INSERT INTO ${sft.getTypeName} (pkz, z31, fid, ${cols.mkString(",")}) values (${Seq.fill(3+cols.length)("?").mkString(",")})")
 
   private var curFeature: SimpleFeature = new ScalaSimpleFeature(UUID.randomUUID().toString, sft)
+
+
+  override protected def createMutators(tables: Seq[String]): Seq[Any] = ???
+
+  override protected def createWrites(mutators: Seq[Any]): Seq[(Seq[Any]) => Unit] = ???
+
+  override protected def wrapFeature(feature: SimpleFeature): CassandraFeature = ???
 
   override def next(): SimpleFeature = {
     curFeature = new ScalaSimpleFeature(UUID.randomUUID().toString, sft)

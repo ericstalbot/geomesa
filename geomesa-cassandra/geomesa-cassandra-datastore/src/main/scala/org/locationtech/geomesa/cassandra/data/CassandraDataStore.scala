@@ -21,7 +21,10 @@ import org.geotools.data.store._
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder
 import org.geotools.feature.{AttributeTypeBuilder, NameImpl}
 import org.joda.time.{DateTime, Seconds, Weeks}
+import org.locationtech.geomesa.cassandra.CassandraDataStoreType
 import org.locationtech.geomesa.curve.{TimePeriod, Z3SFC}
+import org.locationtech.geomesa.index.geotools.GeoMesaDataStoreFactory.GeoMesaDataStoreConfig
+import org.locationtech.geomesa.index.utils.LocalLocking
 import org.locationtech.geomesa.utils.geotools.SimpleFeatureTypes
 import org.locationtech.geomesa.utils.text.WKBUtils
 import org.locationtech.sfcurve.zorder.ZCurve2D
@@ -89,7 +92,10 @@ object CassandraDataStore {
   }
 }
 
-class CassandraDataStore(session: Session, keyspaceMetadata: KeyspaceMetadata, ns: URI) extends ContentDataStore {
+class CassandraDataStore(val session: Session, keyspaceMetadata: KeyspaceMetadata, ns: URI, config: GeoMesaDataStoreConfig)
+  extends CassandraDataStoreType(config) with LocalLocking {
+
+  //extends ContentDataStore {
   import scala.collection.JavaConversions._
 
   override def createFeatureSource(contentEntry: ContentEntry): ContentFeatureSource =
